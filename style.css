@@ -1,13 +1,13 @@
 :root {
     /* Dark Theme (Default) */
-    --bg-body: #0f172a;
-    --bg-card: #0f172a;
+    --bg-body: #0a0a0a;
+    --bg-card: #0a0a0a;
     /* Same as body for flat look, or slightly different if needed */
     --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: #334155;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
+    --text-muted: #a1a1aa;
+    --border: #27272a;
+    --primary: #fafafa;
+    --primary-hover: #e4e4e7;
     --danger: #ef4444;
     --success: #10b981;
     --radius: 4px;
