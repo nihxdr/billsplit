@@ -1,6 +1,9 @@
 // State
 let friends = [];
 let items = [];
+let currency = '$';
+let payerMode = 'single'; // 'single' or 'multiple'
+let payments = {}; // { "Name": amount }
 
 // DOM Elements
 const friendInput = document.getElementById('friend-name');
@@ -19,11 +22,46 @@ const totalAmountEl = document.getElementById('total-amount');
 const individualSharesEl = document.getElementById('individual-shares');
 const debtsEl = document.getElementById('debts-list');
 
+const currencySelect = document.getElementById('currency-select');
+const singlePayerContainer = document.getElementById('single-payer-container');
+const multiplePayerContainer = document.getElementById('multiple-payer-container');
+const payerInputs = document.getElementById('payer-inputs');
+const totalPaidDisplay = document.getElementById('total-paid-display');
+const paymentStatus = document.getElementById('payment-status');
+
 // Utilities
-const formatMoney = (amount) => '$' + amount.toFixed(2);
+const formatMoney = (amount) => currency + amount.toFixed(2);
 const handleEnter = (e, callback) => {
     if (e.key === 'Enter') callback();
 };
+
+// Theme Logic
+function toggleTheme() {
+    const body = document.body;
+    const currentTheme = body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Init Theme & Currency
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+    document.body.setAttribute('data-theme', savedTheme);
+}
+
+const savedCurrency = localStorage.getItem('currency');
+if (savedCurrency) {
+    currency = savedCurrency;
+    currencySelect.value = currency;
+}
+
+function updateCurrency() {
+    currency = currencySelect.value;
+    localStorage.setItem('currency', currency);
+    renderItems();
+    calculateSplits();
+}
 
 // Friends Logic
 function addFriend() {
@@ -39,7 +77,8 @@ function addFriend() {
     renderFriends();
     updateSharedByGrid();
     updatePayerSelect();
-    calculateSplits(); // Recalculate if needed
+    renderPayerInputs(); // Update multiple payer inputs
+    calculateSplits();
 }
 
 function removeFriend(index) {
@@ -54,6 +93,7 @@ function removeFriend(index) {
     renderFriends();
     updateSharedByGrid();
     updatePayerSelect();
+    renderPayerInputs();
     renderItems();
     calculateSplits();
 }
@@ -62,7 +102,7 @@ function renderFriends() {
     friendsList.innerHTML = friends.map((friend, index) => `
         <div class="list-item">
             <span>${friend}</span>
-            <button class="danger" onclick="removeFriend(${index})" style="padding: 0.5rem;">
+            <button class="danger" onclick="removeFriend(${index})" aria-label="Remove ${friend}">
                 ✕
             </button>
         </div>
@@ -111,11 +151,11 @@ function addItem() {
     }
 
     const involved = [];
-    document.querySelectorAll('.checkbox-label').forEach(label => {
+    document.querySelectorAll('#shared-by-grid .checkbox-label').forEach(label => {
         const checkbox = label.querySelector('input[type="checkbox"]');
         const shareInput = label.querySelector('.share-input');
 
-        if (checkbox.checked) {
+        if (checkbox && checkbox.checked) {
             involved.push({
                 name: checkbox.value,
                 weight: parseFloat(shareInput.value) || 1
@@ -166,7 +206,7 @@ function renderItems() {
                     Shared by: ${involvedText}
                 </div>
             </div>
-            <button class="danger" onclick="removeItem(${item.id})" style="padding: 0.5rem; margin-left: 1rem;">
+            <button class="danger" onclick="removeItem(${item.id})" aria-label="Remove ${item.name}">
                 ✕
             </button>
         </div>
@@ -175,6 +215,26 @@ function renderItems() {
 }
 
 // Settlement Logic
+function togglePayerMode() {
+    const radios = document.getElementsByName('payer-mode');
+    for (const radio of radios) {
+        if (radio.checked) {
+            payerMode = radio.value;
+            break;
+        }
+    }
+
+    if (payerMode === 'single') {
+        singlePayerContainer.classList.remove('hidden');
+        multiplePayerContainer.classList.add('hidden');
+    } else {
+        singlePayerContainer.classList.add('hidden');
+        multiplePayerContainer.classList.remove('hidden');
+        renderPayerInputs();
+    }
+    calculateSplits();
+}
+
 function updatePayerSelect() {
     const currentPayer = payerSelect.value;
     payerSelect.innerHTML = '<option value="">Select Payer</option>' +
@@ -184,20 +244,30 @@ function updatePayerSelect() {
     }
 }
 
-function calculateSplits() {
-    const payer = payerSelect.value;
+function renderPayerInputs() {
+    payerInputs.innerHTML = friends.map(friend => `
+        <div class="list-item">
+            <span>${friend}</span>
+            <input type="number" class="payment-input" 
+                   placeholder="0.00" 
+                   step="0.01" 
+                   data-friend="${friend}"
+                   oninput="calculateSplits()"
+                   style="width: 100px; text-align: right;">
+        </div>
+    `).join('');
+}
 
-    if (!payer || items.length === 0) {
+function calculateSplits() {
+    if (items.length === 0) {
         resultsArea.classList.add('hidden');
         return;
     }
 
-    resultsArea.classList.remove('hidden');
-
-    // 1. Calculate Total and Individual Shares
+    // 1. Calculate Total and Individual Shares (Cost)
     let total = 0;
-    const shares = {};
-    friends.forEach(f => shares[f] = 0);
+    const cost = {}; // How much each person SHOULD pay
+    friends.forEach(f => cost[f] = 0);
 
     items.forEach(item => {
         total += item.price;
@@ -206,16 +276,53 @@ function calculateSplits() {
         const costPerWeight = item.price / totalWeight;
 
         item.involved.forEach(person => {
-            if (shares[person.name] !== undefined) {
-                shares[person.name] += costPerWeight * person.weight;
+            if (cost[person.name] !== undefined) {
+                cost[person.name] += costPerWeight * person.weight;
             }
         });
     });
 
     totalAmountEl.textContent = formatMoney(total);
 
-    // Render Individual Shares
-    individualSharesEl.innerHTML = Object.entries(shares)
+    // 2. Determine who paid what
+    const paid = {}; // How much each person ACTUALLY paid
+    friends.forEach(f => paid[f] = 0);
+    let totalPaid = 0;
+
+    if (payerMode === 'single') {
+        const payer = payerSelect.value;
+        if (!payer) {
+            resultsArea.classList.add('hidden');
+            return;
+        }
+        paid[payer] = total;
+        totalPaid = total;
+    } else {
+        const inputs = document.querySelectorAll('.payment-input');
+        inputs.forEach(input => {
+            const amount = parseFloat(input.value) || 0;
+            paid[input.dataset.friend] = amount;
+            totalPaid += amount;
+        });
+
+        totalPaidDisplay.textContent = formatMoney(totalPaid);
+
+        const diff = totalPaid - total;
+        if (Math.abs(diff) > 0.01) {
+            paymentStatus.textContent = diff > 0
+                ? `Overpaid by ${formatMoney(diff)}`
+                : `Remaining: ${formatMoney(Math.abs(diff))}`;
+            paymentStatus.style.color = diff > 0 ? 'var(--success)' : 'var(--danger)';
+        } else {
+            paymentStatus.textContent = 'Total matches bill amount';
+            paymentStatus.style.color = 'var(--success)';
+        }
+    }
+
+    resultsArea.classList.remove('hidden');
+
+    // Render Individual Shares (Cost)
+    individualSharesEl.innerHTML = Object.entries(cost)
         .sort(([, a], [, b]) => b - a)
         .map(([name, amount]) => `
             <div class="list-item" style="background: transparent; border: none; padding: 0.5rem 0;">
@@ -224,17 +331,46 @@ function calculateSplits() {
             </div>
         `).join('');
 
-    // 2. Calculate Debts (Who owes Payer)
-    // Since there is only ONE payer, this is simple.
-    // Everyone owes their share to the payer.
-    // The payer "owes" themselves their share (which cancels out).
+    // 3. Calculate Debts (Net Balance)
+    // Net = Paid - Cost
+    // Positive Net = Owed Money (Creditor)
+    // Negative Net = Owes Money (Debtor)
 
-    const debts = [];
-    Object.entries(shares).forEach(([name, share]) => {
-        if (name !== payer && share > 0) {
-            debts.push({ from: name, to: payer, amount: share });
-        }
+    let debtors = [];
+    let creditors = [];
+
+    friends.forEach(f => {
+        const net = paid[f] - cost[f];
+        if (net < -0.01) debtors.push({ name: f, amount: -net });
+        else if (net > 0.01) creditors.push({ name: f, amount: net });
     });
+
+    // Match debtors to creditors
+    const debts = [];
+
+    // Sort by amount to minimize transactions (greedy approach)
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    let i = 0; // debtor index
+    let j = 0; // creditor index
+
+    while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+
+        const amount = Math.min(debtor.amount, creditor.amount);
+
+        if (amount > 0.01) {
+            debts.push({ from: debtor.name, to: creditor.name, amount });
+        }
+
+        debtor.amount -= amount;
+        creditor.amount -= amount;
+
+        if (debtor.amount < 0.01) i++;
+        if (creditor.amount < 0.01) j++;
+    }
 
     debtsEl.innerHTML = debts.length ? debts.map(debt => `
         <div class="list-item" style="border-left: 4px solid var(--danger);">

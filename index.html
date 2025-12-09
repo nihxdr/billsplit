@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,11 +10,27 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header>
-            <h1>BillSplit</h1>
-            <p class="subtitle">Effortlessly split bills with friends</p>
+            <div>
+                <h1>BillSplit</h1>
+                <p class="subtitle">Effortlessly split bills with friends</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <select id="currency-select" onchange="updateCurrency()" style="width: auto; padding: 0.25rem 0.5rem;"
+                    aria-label="Select Currency">
+                    <option value="$">$ (USD)</option>
+                    <option value="€">€ (EUR)</option>
+                    <option value="£">£ (GBP)</option>
+                    <option value="₹">₹ (INR)</option>
+                    <option value="¥">¥ (JPY)</option>
+                </select>
+                <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                    🌗
+                </button>
+            </div>
         </header>
 
         <!-- Step 1: Add Friends -->
@@ -23,7 +40,8 @@
                 <span class="tag" id="friend-count">0 friends</span>
             </div>
             <div class="input-group">
-                <input type="text" id="friend-name" placeholder="Enter friend's name" onkeypress="handleEnter(event, addFriend)">
+                <input type="text" id="friend-name" placeholder="Enter friend's name"
+                    onkeypress="handleEnter(event, addFriend)">
                 <button onclick="addFriend()">Add</button>
             </div>
             <div id="friends-list" class="list-container">
@@ -37,12 +55,12 @@
                 <h2>🧾 Items</h2>
                 <span class="tag" id="item-count">0 items</span>
             </div>
-            
+
             <div class="input-group">
                 <input type="text" id="item-name" placeholder="Item name (e.g., Pizza)" style="flex: 2">
                 <input type="number" id="item-price" placeholder="Price" step="0.01" style="flex: 1">
             </div>
-            
+
             <div style="margin-bottom: 1rem;">
                 <p class="subtitle" style="font-size: 0.9rem; margin-bottom: 0.5rem;">Shared by:</p>
                 <div id="shared-by-grid" class="checkbox-grid">
@@ -63,12 +81,39 @@
             <div class="section-header">
                 <h2>💰 Settlement</h2>
             </div>
-            
-            <div class="input-group" style="align-items: center;">
-                <label for="payer-select" style="white-space: nowrap;">Paid by:</label>
-                <select id="payer-select" onchange="calculateSplits()">
-                    <option value="">Select Payer</option>
-                </select>
+
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <label class="radio-card" style="flex: 1;">
+                        <input type="radio" name="payer-mode" value="single" checked onchange="togglePayerMode()">
+                        Single Payer
+                    </label>
+                    <label class="radio-card" style="flex: 1;">
+                        <input type="radio" name="payer-mode" value="multiple" onchange="togglePayerMode()">
+                        Multiple Payers
+                    </label>
+                </div>
+
+                <div id="single-payer-container">
+                    <div class="input-group" style="align-items: center;">
+                        <label for="payer-select" style="white-space: nowrap;">Paid by:</label>
+                        <select id="payer-select" onchange="calculateSplits()">
+                            <option value="">Select Payer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="multiple-payer-container" class="hidden">
+                    <p class="subtitle" style="margin-bottom: 0.5rem;">Enter amount paid by each person:</p>
+                    <div id="payer-inputs" class="list-container">
+                        <!-- Inputs generated here -->
+                    </div>
+                    <div class="result-row mt-4" style="border-top: 1px solid var(--border); padding-top: 0.5rem;">
+                        <span>Total Paid:</span>
+                        <span id="total-paid-display" style="font-weight: 600;">$0.00</span>
+                    </div>
+                    <div id="payment-status" class="subtitle text-right" style="font-size: 0.85rem;"></div>
+                </div>
             </div>
 
             <div id="results-area" class="hidden">
@@ -94,4 +139,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

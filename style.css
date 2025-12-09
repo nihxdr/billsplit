@@ -1,129 +1,172 @@
 :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --bg-dark: #0f172a;
-    --bg-card: #1e293b;
+    /* Dark Theme (Default) */
+    --bg-body: #0f172a;
+    --bg-card: #0f172a;
+    /* Same as body for flat look, or slightly different if needed */
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --border: #334155;
-    --success: #10b981;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
     --danger: #ef4444;
-    --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --success: #10b981;
+    --radius: 4px;
+    /* Sharp radius */
+    /* No shadows */
+}
+
+[data-theme="light"] {
+    --bg-body: #ffffff;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #000000;
+    /* Stark black for minimal look */
+    --primary-hover: #333333;
+    /* No shadows */
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 body {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-body);
     color: var(--text-main);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     padding: 2rem;
     line-height: 1.5;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
     width: 100%;
-    max-width: 800px;
+    max-width: 640px;
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
 header {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 1rem;
-    animation: fadeInDown 0.6s ease-out;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
 }
 
 h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
 }
 
 .subtitle {
     color: var(--text-muted);
-    font-size: 1.1rem;
+    font-size: 0.875rem;
 }
 
 .card {
     background: var(--bg-card);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
-    animation: fadeInUp 0.6s ease-out backwards;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    /* No border radius on card itself if it blends with body, 
+       but we keep sections distinct with spacing or borders if needed. 
+       For this flat look, we might just use the container flow. */
+    padding: 0;
+    /* Remove padding if blending */
+    border: none;
+    box-shadow: none;
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 h2 {
-    font-size: 1.25rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
 }
 
 /* Form Elements */
 .input-group {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     margin-bottom: 1rem;
 }
 
 input,
 select {
-    background: var(--bg-dark);
+    background: transparent;
     border: 1px solid var(--border);
     color: var(--text-main);
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
     width: 100%;
-    transition: border-color 0.2s, ring 0.2s;
+    transition: border-color 0.2s;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    padding: 0;
+}
+
+.radio-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.radio-card:hover {
+    border-color: var(--text-muted);
+}
+
+.radio-card:has(input:checked) {
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 input:focus,
 select:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    border-color: var(--text-main);
+    /* High contrast focus */
 }
 
 button {
     background: var(--primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
+    color: var(--bg-body);
+    /* Invert text color for contrast */
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -132,10 +175,11 @@ button {
 
 button:hover {
     background: var(--primary-hover);
+    border-color: var(--primary-hover);
 }
 
-button:active {
-    transform: scale(0.98);
+[data-theme="light"] button {
+    color: white;
 }
 
 button.secondary {
@@ -145,52 +189,88 @@ button.secondary {
 }
 
 button.secondary:hover {
-    border-color: var(--text-muted);
+    border-color: var(--text-main);
     color: var(--text-main);
+    background: transparent;
 }
 
 button.danger {
-    background: rgba(239, 68, 68, 0.1);
+    background: transparent;
+    border: 1px solid var(--border);
     color: var(--danger);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    transition: all 0.2s;
 }
 
 button.danger:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+button.icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.25rem;
+    font-size: 1.1rem;
+}
+
+button.icon-btn:hover {
+    color: var(--text-main);
+    background: transparent;
 }
 
 /* Lists */
 .list-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: -1px;
+    /* Collapse borders */
 }
 
 .list-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: var(--bg-dark);
-    border-radius: 0.5rem;
-    border: 1px solid var(--border);
-    animation: slideIn 0.3s ease-out;
+    padding: 0.75rem 0.5rem;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.list-item:hover {
+    background-color: var(--bg-card);
+    /* Subtle highlight on hover */
+}
+
+.list-item:last-child {
+    border-bottom: none;
 }
 
 .tag {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.75rem;
+    border: none;
 }
 
 /* Checkbox Grid */
 .checkbox-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .checkbox-label {
@@ -198,40 +278,44 @@ button.danger:hover {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.5rem;
-    background: var(--bg-dark);
+    padding: 0.35rem 0.5rem;
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius);
     cursor: pointer;
     user-select: none;
-    transition: all 0.2s;
+    font-size: 0.85rem;
 }
 
 .checkbox-label:hover {
-    border-color: var(--primary);
+    border-color: var(--text-muted);
 }
 
 .checkbox-label.checked {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--text-main);
+    background: transparent;
+    color: var(--text-main);
 }
 
 .checkbox-label input[type="checkbox"] {
-    width: auto;
     display: none;
 }
 
 .share-input {
-    width: 60px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--border);
-    border-radius: 0.25rem;
-    background: var(--bg-card);
+    width: 40px;
+    padding: 0.1rem;
+    font-size: 0.8rem;
+    border: none;
+    border-bottom: 1px solid var(--text-muted);
+    border-radius: 0;
+    background: transparent;
     color: var(--text-main);
     display: none;
-    /* Hidden by default */
+    text-align: center;
+}
+
+.share-input:focus {
+    border-color: var(--text-main);
 }
 
 .checkbox-label.checked .share-input {
@@ -240,8 +324,8 @@ button.danger:hover {
 
 /* Results */
 .result-group {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border);
 }
 
@@ -249,50 +333,14 @@ button.danger:hover {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
 }
 
 .total-row {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--success);
-}
-
-/* Animations */
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
 }
 
 /* Utilities */
