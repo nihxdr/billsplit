@@ -45,10 +45,10 @@ function addFriend() {
 function removeFriend(index) {
     const name = friends[index];
     friends.splice(index, 1);
-    
+
     // Remove friend from items they were part of
     items.forEach(item => {
-        item.involved = item.involved.filter(f => f !== name);
+        item.involved = item.involved.filter(f => f.name !== name);
     });
 
     renderFriends();
@@ -78,22 +78,25 @@ function updateSharedByGrid() {
     }
 
     // Preserve checked state if possible, or default to all checked
-    const currentChecked = Array.from(document.querySelectorAll('.checkbox-label input:checked')).map(i => i.value);
-    
+    const currentChecked = Array.from(document.querySelectorAll('.checkbox-label input[type="checkbox"]:checked')).map(i => i.value);
+
     sharedByGrid.innerHTML = friends.map(friend => {
         const isChecked = currentChecked.length === 0 || currentChecked.includes(friend); // Default to all checked if new item
         return `
-        <label class="checkbox-label ${isChecked ? 'checked' : ''}" onclick="this.classList.toggle('checked')">
-            <input type="checkbox" value="${friend}" ${isChecked ? 'checked' : ''}>
-            ${friend}
+        <label class="checkbox-label ${isChecked ? 'checked' : ''}">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <input type="checkbox" value="${friend}" ${isChecked ? 'checked' : ''}>
+                ${friend}
+            </div>
+            <input type="number" class="share-input" value="1" min="0.1" step="0.1" placeholder="Shares" onclick="event.stopPropagation()">
         </label>
     `}).join('');
-    
+
     // Re-attach listener for visual toggle
-    document.querySelectorAll('.checkbox-label input').forEach(input => {
+    document.querySelectorAll('.checkbox-label input[type="checkbox"]').forEach(input => {
         input.addEventListener('change', (e) => {
-            if(e.target.checked) e.target.parentElement.classList.add('checked');
-            else e.target.parentElement.classList.remove('checked');
+            if (e.target.checked) e.target.parentElement.parentElement.classList.add('checked');
+            else e.target.parentElement.parentElement.classList.remove('checked');
         });
     });
 }
@@ -101,14 +104,25 @@ function updateSharedByGrid() {
 function addItem() {
     const name = itemNameInput.value.trim();
     const price = parseFloat(itemPriceInput.value);
-    
+
     if (!name || isNaN(price) || price <= 0) {
         alert('Please enter a valid name and price');
         return;
     }
 
-    const involved = Array.from(document.querySelectorAll('#shared-by-grid input:checked')).map(cb => cb.value);
-    
+    const involved = [];
+    document.querySelectorAll('.checkbox-label').forEach(label => {
+        const checkbox = label.querySelector('input[type="checkbox"]');
+        const shareInput = label.querySelector('.share-input');
+
+        if (checkbox.checked) {
+            involved.push({
+                name: checkbox.value,
+                weight: parseFloat(shareInput.value) || 1
+            });
+        }
+    });
+
     if (involved.length === 0) {
         alert('Please select at least one friend to share this item');
         return;
@@ -124,7 +138,7 @@ function addItem() {
     itemNameInput.value = '';
     itemPriceInput.value = '';
     itemNameInput.focus();
-    
+
     renderItems();
     calculateSplits();
 }
@@ -136,7 +150,12 @@ function removeItem(id) {
 }
 
 function renderItems() {
-    itemsList.innerHTML = items.map(item => `
+    itemsList.innerHTML = items.map(item => {
+        const involvedText = item.involved.map(i =>
+            i.weight === 1 ? i.name : `${i.name} (${i.weight}x)`
+        ).join(', ');
+
+        return `
         <div class="list-item">
             <div style="flex: 1">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
@@ -144,21 +163,21 @@ function renderItems() {
                     <span style="font-weight: 600">${formatMoney(item.price)}</span>
                 </div>
                 <div style="font-size: 0.85rem; color: var(--text-muted);">
-                    Shared by: ${item.involved.join(', ')}
+                    Shared by: ${involvedText}
                 </div>
             </div>
             <button class="danger" onclick="removeItem(${item.id})" style="padding: 0.5rem; margin-left: 1rem;">
                 ✕
             </button>
         </div>
-    `).join('');
+    `}).join('');
     itemCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
 }
 
 // Settlement Logic
 function updatePayerSelect() {
     const currentPayer = payerSelect.value;
-    payerSelect.innerHTML = '<option value="">Select Payer</option>' + 
+    payerSelect.innerHTML = '<option value="">Select Payer</option>' +
         friends.map(f => `<option value="${f}">${f}</option>`).join('');
     if (friends.includes(currentPayer)) {
         payerSelect.value = currentPayer;
@@ -167,7 +186,7 @@ function updatePayerSelect() {
 
 function calculateSplits() {
     const payer = payerSelect.value;
-    
+
     if (!payer || items.length === 0) {
         resultsArea.classList.add('hidden');
         return;
@@ -182,10 +201,13 @@ function calculateSplits() {
 
     items.forEach(item => {
         total += item.price;
-        const splitAmount = item.price / item.involved.length;
+
+        const totalWeight = item.involved.reduce((sum, i) => sum + i.weight, 0);
+        const costPerWeight = item.price / totalWeight;
+
         item.involved.forEach(person => {
-            if (shares[person] !== undefined) {
-                shares[person] += splitAmount;
+            if (shares[person.name] !== undefined) {
+                shares[person.name] += costPerWeight * person.weight;
             }
         });
     });
@@ -194,7 +216,7 @@ function calculateSplits() {
 
     // Render Individual Shares
     individualSharesEl.innerHTML = Object.entries(shares)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .map(([name, amount]) => `
             <div class="list-item" style="background: transparent; border: none; padding: 0.5rem 0;">
                 <span>${name}</span>
@@ -206,7 +228,7 @@ function calculateSplits() {
     // Since there is only ONE payer, this is simple.
     // Everyone owes their share to the payer.
     // The payer "owes" themselves their share (which cancels out).
-    
+
     const debts = [];
     Object.entries(shares).forEach(([name, share]) => {
         if (name !== payer && share > 0) {

@@ -96,7 +96,8 @@ h2 {
     margin-bottom: 1rem;
 }
 
-input, select {
+input,
+select {
     background: var(--bg-dark);
     border: 1px solid var(--border);
     color: var(--text-main);
@@ -107,7 +108,8 @@ input, select {
     transition: border-color 0.2s, ring 0.2s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
@@ -186,7 +188,7 @@ button.danger:hover {
 /* Checkbox Grid */
 .checkbox-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -194,6 +196,7 @@ button.danger:hover {
 .checkbox-label {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem;
     background: var(--bg-dark);
@@ -214,9 +217,25 @@ button.danger:hover {
     color: var(--primary);
 }
 
-.checkbox-label input {
+.checkbox-label input[type="checkbox"] {
     width: auto;
     display: none;
+}
+
+.share-input {
+    width: 60px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg-card);
+    color: var(--text-main);
+    display: none;
+    /* Hidden by default */
+}
+
+.checkbox-label.checked .share-input {
+    display: block;
 }
 
 /* Results */
@@ -241,21 +260,50 @@ button.danger:hover {
 
 /* Animations */
 @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Utilities */
-.hidden { display: none !important; }
-.mt-4 { margin-top: 1rem; }
-.text-right { text-align: right; }
+.hidden {
+    display: none !important;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.text-right {
+    text-align: right;
+}
