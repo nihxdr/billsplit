@@ -4,6 +4,7 @@ let items = [];
 let currency = '$';
 let payerMode = 'single'; // 'single' or 'multiple'
 let payments = {}; // { "Name": amount }
+let editingItemId = null;
 
 // DOM Elements
 const friendInput = document.getElementById('friend-name');
@@ -15,6 +16,8 @@ const itemPriceInput = document.getElementById('item-price');
 const sharedByGrid = document.getElementById('shared-by-grid');
 const itemsList = document.getElementById('items-list');
 const itemCount = document.getElementById('item-count');
+const addItemBtn = document.getElementById('add-item-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
 const payerSelect = document.getElementById('payer-select');
 const resultsArea = document.getElementById('results-area');
@@ -118,10 +121,13 @@ function updateSharedByGrid() {
     }
 
     // Preserve checked state if possible, or default to all checked
-    const currentChecked = Array.from(document.querySelectorAll('.checkbox-label input[type="checkbox"]:checked')).map(i => i.value);
+    // If editing, we handle state separately
+    const currentChecked = editingItemId
+        ? [] // Will be populated by editItem
+        : Array.from(document.querySelectorAll('.checkbox-label input[type="checkbox"]:checked')).map(i => i.value);
 
     sharedByGrid.innerHTML = friends.map(friend => {
-        const isChecked = currentChecked.length === 0 || currentChecked.includes(friend); // Default to all checked if new item
+        const isChecked = !editingItemId && (currentChecked.length === 0 || currentChecked.includes(friend));
         return `
         <label class="checkbox-label ${isChecked ? 'checked' : ''}">
             <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -168,22 +174,83 @@ function addItem() {
         return;
     }
 
-    items.push({
-        id: Date.now(),
-        name,
-        price,
-        involved
-    });
+    if (editingItemId) {
+        // Update existing item
+        const index = items.findIndex(i => i.id === editingItemId);
+        if (index !== -1) {
+            items[index] = {
+                ...items[index],
+                name,
+                price,
+                involved
+            };
+        }
+        cancelEdit();
+    } else {
+        // Add new item
+        items.push({
+            id: Date.now(),
+            name,
+            price,
+            involved
+        });
 
-    itemNameInput.value = '';
-    itemPriceInput.value = '';
-    itemNameInput.focus();
+        // Clear inputs only if adding new (edit mode clears via cancelEdit)
+        itemNameInput.value = '';
+        itemPriceInput.value = '';
+        itemNameInput.focus();
+    }
 
     renderItems();
     calculateSplits();
 }
 
+function editItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    editingItemId = id;
+    itemNameInput.value = item.name;
+    itemPriceInput.value = item.price;
+
+    // Update UI state
+    addItemBtn.textContent = 'Update Item';
+    cancelEditBtn.classList.remove('hidden');
+
+    // Update checkboxes
+    document.querySelectorAll('#shared-by-grid .checkbox-label').forEach(label => {
+        const checkbox = label.querySelector('input[type="checkbox"]');
+        const shareInput = label.querySelector('.share-input');
+        const involvedPerson = item.involved.find(p => p.name === checkbox.value);
+
+        if (involvedPerson) {
+            checkbox.checked = true;
+            label.classList.add('checked');
+            shareInput.value = involvedPerson.weight;
+        } else {
+            checkbox.checked = false;
+            label.classList.remove('checked');
+            shareInput.value = 1;
+        }
+    });
+
+    // Scroll to top
+    document.getElementById('items-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEdit() {
+    editingItemId = null;
+    itemNameInput.value = '';
+    itemPriceInput.value = '';
+    addItemBtn.textContent = 'Add Item';
+    cancelEditBtn.classList.add('hidden');
+
+    // Reset checkboxes to default (all checked or none)
+    updateSharedByGrid();
+}
+
 function removeItem(id) {
+    if (editingItemId === id) cancelEdit();
     items = items.filter(item => item.id !== id);
     renderItems();
     calculateSplits();
@@ -206,9 +273,14 @@ function renderItems() {
                     Shared by: ${involvedText}
                 </div>
             </div>
-            <button class="danger" onclick="removeItem(${item.id})" aria-label="Remove ${item.name}">
-                ✕
-            </button>
+            <div style="display: flex; gap: 0.5rem; margin-left: 1rem;">
+                <button class="secondary icon-btn" onclick="editItem(${item.id})" aria-label="Edit ${item.name}">
+                    ✎
+                </button>
+                <button class="danger" onclick="removeItem(${item.id})" aria-label="Remove ${item.name}">
+                    ✕
+                </button>
+            </div>
         </div>
     `}).join('');
     itemCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;

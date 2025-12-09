@@ -69,7 +69,11 @@
                 </div>
             </div>
 
-            <button onclick="addItem()" style="width: 100%">Add Item</button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="add-item-btn" onclick="addItem()" style="flex: 1">Add Item</button>
+                <button id="cancel-edit-btn" class="secondary hidden" onclick="cancelEdit()"
+                    style="flex: 1">Cancel</button>
+            </div>
 
             <div id="items-list" class="list-container mt-4">
                 <!-- Items will appear here -->
